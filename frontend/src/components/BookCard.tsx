@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import TextTruncate from "react-text-truncate";
 
 export interface Book {
   id: string;
@@ -9,19 +10,35 @@ export interface Book {
 
 const BookCard = ({ book }: { book: Book }) => {
   return (
-    <li className="border p-4 rounded-md shadow-sm">
+    <li>
       <Link
         to={`/book/${book.id}`}
-        className="block font-semibold text-lg text-blue-700 hover:underline"
+        className="block border p-4 rounded-md shadow-sm hover:shadow-md transition duration-200 hover:bg-gray-50"
       >
-        {book.title}
+        <TextTruncate
+          containerClassName="font-semibold text-lg text-blue-700"
+          line={1}
+          element="h3"
+          truncateText="…"
+          text={book.title}
+        />
+        <TextTruncate
+          containerClassName="text-gray-600 text-sm"
+          line={1}
+          element="p"
+          truncateText="…"
+          text={`by ${book.author}`}
+        />
+        {book.description && (
+          <TextTruncate
+            containerClassName="text-gray-500 mt-2 text-sm"
+            line={1}
+            element="p"
+            truncateText="…"
+            text={book.description}
+          />
+        )}
       </Link>
-      <p className="text-gray-600 text-sm">by {book.author}</p>
-      {book.description && (
-        <p className="text-gray-500 mt-2 text-sm">
-          {book.description.substring(0, 100)}...
-        </p>
-      )}
     </li>
   );
 };

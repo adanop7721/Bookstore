@@ -1,3 +1,5 @@
+import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -15,6 +17,13 @@ const loginSchema = z.object({
 type LoginForm = z.infer<typeof loginSchema>;
 
 const Login = () => {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (token) navigate("/");
+  }, [navigate]);
+
   const {
     register,
     handleSubmit,
@@ -29,6 +38,7 @@ const Login = () => {
       const response = await axios.post(`${SERVER_URL}/api/auth/login`, data);
       const { token } = response.data;
       localStorage.setItem("token", token);
+      navigate("/");
     } catch (err: any) {
       console.log(err.response?.data?.message);
       const message = err.response?.data?.message || "Login failed";
@@ -45,7 +55,7 @@ const Login = () => {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen">
+    <div className="flex size-full items-center justify-center">
       <form
         onSubmit={handleSubmit(onSubmit)}
         className="bg-white p-6 rounded-lg shadow-md w-full max-w-sm"

@@ -1,3 +1,5 @@
+import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -21,6 +23,13 @@ const registerSchema = z
 type RegisterForm = z.infer<typeof registerSchema>;
 
 const Register = () => {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (token) navigate("/");
+  }, [navigate]);
+
   const {
     register,
     handleSubmit,
@@ -32,10 +41,14 @@ const Register = () => {
 
   const onSubmit = async (data: RegisterForm) => {
     try {
-      await axios.post(`${SERVER_URL}/api/auth/register`, {
+      const res = await axios.post(`${SERVER_URL}/api/auth/register`, {
         email: data.email,
         password: data.password,
       });
+
+      const { token } = res.data;
+      localStorage.setItem("token", token);
+      navigate("/");
     } catch (err: any) {
       const message = err.response?.data?.message || "Registration failed";
 
@@ -48,7 +61,7 @@ const Register = () => {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen">
+    <div className="flex size-full items-center justify-center">
       <form
         onSubmit={handleSubmit(onSubmit)}
         className="bg-white p-6 rounded-lg shadow-md w-full max-w-sm"

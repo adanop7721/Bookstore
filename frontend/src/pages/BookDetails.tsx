@@ -14,24 +14,45 @@ interface Book {
 const BookDetails = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+
   const [book, setBook] = useState<Book | null>(null);
+  const [favorites, setFavorites] = useState<Book[]>([]);
   const [loading, setLoading] = useState(true);
   const [favoriteSuccess, setFavoriteSuccess] = useState(false);
+
+  const token = localStorage.getItem("token");
 
   useEffect(() => {
     if (!id) return;
 
-    axios
-      .get(`${SERVER_URL}/api/books/${id}`)
-      .then((res) => setBook(res.data))
-      .catch((err) => console.error("Failed to fetch book:", err))
-      .finally(() => setLoading(false));
-  }, [id]);
+    const fetchBookAndFavorites = async () => {
+      try {
+        const [bookRes, favRes] = await Promise.all([
+          axios.get(`${SERVER_URL}/api/books/${id}`),
+          token
+            ? axios.get(`${SERVER_URL}/api/user/favorites`, {
+                headers: { Authorization: `Bearer ${token}` },
+              })
+            : Promise.resolve({ data: [] }),
+        ]);
+
+        setBook(bookRes.data);
+        setFavorites(favRes.data);
+      } catch (err) {
+        console.error("Failed to load book or favorites:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchBookAndFavorites();
+  }, [id, token]);
+
+  const isAlreadyFavorite = favorites.some((fav) => fav.id === id);
 
   const handleAddToFavorites = async () => {
     try {
-      const token = localStorage.getItem("token");
-      if (!token) return alert("Please login to add favorites.");
+      if (!token) return navigate("/login");
 
       await axios.post(`${SERVER_URL}/api/user/favorites/${id}`, null, {
         headers: { Authorization: `Bearer ${token}` },
@@ -61,12 +82,17 @@ const BookDetails = () => {
 
       <button
         onClick={handleAddToFavorites}
-        className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+        disabled={isAlreadyFavorite}
+        className={`px-4 py-2 rounded text-white ${
+          isAlreadyFavorite
+            ? "bg-gray-400 cursor-not-allowed"
+            : "bg-blue-600 hover:bg-blue-700"
+        }`}
       >
-        Add to Favorites
+        {isAlreadyFavorite ? "Already in Favorites" : "Add to Favorites"}
       </button>
 
-      {favoriteSuccess && (
+      {favoriteSuccess && !isAlreadyFavorite && (
         <p className="text-green-600 mt-2">Book added to favorites!</p>
       )}
     </div>
