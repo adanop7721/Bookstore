@@ -17,9 +17,17 @@ router.post("/register", async (req: Request, res: Response) => {
     }
 
     const passwordHash = await bcrypt.hash(password, 10);
-    await prisma.user.create({ data: { email, password: passwordHash } });
+    const newUser = await prisma.user.create({
+      data: { email, password: passwordHash },
+    });
 
-    res.status(201).json({ message: "User registered" });
+    const token = jwt.sign(
+      { id: newUser.id, email: newUser.email },
+      SECRET_KEY,
+      { expiresIn: "1d" }
+    );
+
+    res.status(201).json({ token });
   } catch (err) {
     console.error("Register error:", err);
     res.status(500).json({ message: "Internal server error" });

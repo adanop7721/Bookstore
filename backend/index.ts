@@ -5,6 +5,7 @@ import bodyParser from "body-parser";
 
 import authRoutes from "./routes/auth.routes";
 import bookRoutes from "./routes/book.routes";
+import favoriteRoutes from "./routes/favorite.routes";
 
 dotenv.config();
 
@@ -23,6 +24,7 @@ app.get("/health", (req, res) => {
 
 app.use("/api/auth", authRoutes);
 app.use("/api/books", bookRoutes);
+app.use("/api/user/favorites", favoriteRoutes);
 
 app.listen(port, () => {
   console.info(`Server is running on PORT: ${port}`);
