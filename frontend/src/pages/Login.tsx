@@ -40,7 +40,6 @@ const Login = () => {
       localStorage.setItem("token", token);
       navigate("/");
     } catch (err: any) {
-      console.log(err.response?.data?.message);
       const message = err.response?.data?.message || "Login failed";
 
       if (message === "User does not exist") {

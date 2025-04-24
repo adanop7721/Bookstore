@@ -1,6 +1,8 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import axios from "axios";
+import { toast } from "react-toastify";
+import { Loader } from "lucide-react";
 
 const SERVER_URL = process.env.REACT_APP_SERVER_URL;
 
@@ -18,7 +20,7 @@ const BookDetails = () => {
   const [book, setBook] = useState<Book | null>(null);
   const [favorites, setFavorites] = useState<Book[]>([]);
   const [loading, setLoading] = useState(true);
-  const [favoriteSuccess, setFavoriteSuccess] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   const token = localStorage.getItem("token");
 
@@ -48,23 +50,40 @@ const BookDetails = () => {
     fetchBookAndFavorites();
   }, [id, token]);
 
-  const isAlreadyFavorite = favorites.some((fav) => fav.id === id);
+  const isFavorite = favorites.some((fav) => fav.id === id);
 
-  const handleAddToFavorites = async () => {
+  const handleToggleFavorite = async () => {
+    if (!token || !id) return navigate("/login");
+
+    setIsProcessing(true);
     try {
-      if (!token) return navigate("/login");
-
-      await axios.post(`${SERVER_URL}/api/user/favorites/${id}`, null, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      setFavoriteSuccess(true);
+      if (isFavorite) {
+        await axios.delete(`${SERVER_URL}/api/user/favorites/${id}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setFavorites((prev) => prev.filter((b) => b.id !== id));
+        toast.info("Removed from favorites");
+      } else {
+        await axios.post(`${SERVER_URL}/api/user/favorites/${id}`, null, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (book) setFavorites((prev) => [...prev, book]);
+        toast.success("Added to favorites");
+      }
     } catch (err) {
-      console.error("Failed to add to favorites:", err);
+      console.error("Favorite toggle failed:", err);
+      toast.error("Failed to update favorite");
+    } finally {
+      setIsProcessing(false);
     }
   };
 
-  if (loading) return <div>Loading...</div>;
+  if (loading)
+    return (
+      <div className="flex justify-center py-10">
+        <Loader className="w-8 h-8 text-blue-500 animate-spin" />
+      </div>
+    );
   if (!book) return <div>Book not found.</div>;
 
   return (
@@ -81,20 +100,16 @@ const BookDetails = () => {
       <p className="text-gray-600 mb-4">{book.description}</p>
 
       <button
-        onClick={handleAddToFavorites}
-        disabled={isAlreadyFavorite}
+        onClick={handleToggleFavorite}
+        disabled={isProcessing}
         className={`px-4 py-2 rounded text-white ${
-          isAlreadyFavorite
-            ? "bg-gray-400 cursor-not-allowed"
+          isFavorite
+            ? "bg-red-600 hover:bg-red-700"
             : "bg-blue-600 hover:bg-blue-700"
         }`}
       >
-        {isAlreadyFavorite ? "Already in Favorites" : "Add to Favorites"}
+        {isFavorite ? "Remove from Favorites" : "Add to Favorites"}
       </button>
-
-      {favoriteSuccess && !isAlreadyFavorite && (
-        <p className="text-green-600 mt-2">Book added to favorites!</p>
-      )}
     </div>
   );
 };

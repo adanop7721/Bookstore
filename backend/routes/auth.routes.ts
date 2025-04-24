@@ -7,6 +7,7 @@ const SECRET_KEY = process.env.JWT_SECRET || "supersecretkey";
 
 const router = express.Router();
 
+// POST /api/auth/register
 router.post("/register", async (req: Request, res: Response) => {
   const { email, password } = req.body;
 
@@ -34,6 +35,7 @@ router.post("/register", async (req: Request, res: Response) => {
   }
 });
 
+// POST /api/auth/login
 router.post("/login", async (req: Request, res: Response) => {
   const { email, password } = req.body;
 

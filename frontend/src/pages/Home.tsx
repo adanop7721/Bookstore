@@ -1,16 +1,21 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
+import { toast } from "react-toastify";
+import { Loader } from "lucide-react";
+
 import BookCard, { Book } from "../components/BookCard";
 
 const SERVER_URL = process.env.REACT_APP_SERVER_URL;
 
 const Home = () => {
   const [books, setBooks] = useState<Book[]>([]);
+  const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
 
+  // Fetch books
   useEffect(() => {
     const fetchBooks = async () => {
       try {
@@ -29,6 +34,31 @@ const Home = () => {
 
     fetchBooks();
   }, [page, search]);
+
+  // Fetch favorites
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+
+    axios
+      .get(`${SERVER_URL}/api/user/favorites`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      .then((res) => setFavoriteIds(res.data.map((b: Book) => b.id)))
+      .catch((err) => console.error("Failed to fetch favorites:", err));
+  }, []);
+
+  const handleToggleFavorite = (bookId: string, isAdding: boolean) => {
+    setFavoriteIds((prev) =>
+      isAdding ? [...prev, bookId] : prev.filter((id) => id !== bookId)
+    );
+
+    if (isAdding) {
+      toast.success("Added to favorites");
+    } else {
+      toast.info("Removed from favorites");
+    }
+  };
 
   const filteredBooks = books.filter(
     (book) =>
@@ -51,12 +81,19 @@ const Home = () => {
       />
 
       {loading ? (
-        <p>Loading books...</p>
+        <div className="flex justify-center py-10">
+          <Loader className="w-8 h-8 text-blue-500 animate-spin" />
+        </div>
       ) : (
         <>
           <ul className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {filteredBooks.map((book) => (
-              <BookCard key={book.id} book={book} />
+              <BookCard
+                key={book.id}
+                book={book}
+                favoriteIds={favoriteIds}
+                onToggleFavorite={handleToggleFavorite}
+              />
             ))}
           </ul>
 
